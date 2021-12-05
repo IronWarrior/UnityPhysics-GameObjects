@@ -6,6 +6,6 @@ https://user-images.githubusercontent.com/12469377/144763598-822187f1-0de6-4d10-
 
 🚨 **This project is a very minimal proof of concept**; no thought has been put into API design, completeness or performance.
 
-† *Unity Physics does depend on the Entity struct itself from ECS.*
+† *Unity Physics does depend on the `Entity` struct itself from ECS.*
 
 ‡ *Unity Physics is described as "deterministic", but I assume this is restricted to determinism across a single platform due to inconsistencies between some floating point arithmetic between platforms (e.g. ARM vs x86).*
