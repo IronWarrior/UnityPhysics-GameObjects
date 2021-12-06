@@ -14,6 +14,8 @@ public class PhysicsBody : MonoBehaviour
         boxColliderDimensions.y * transform.localScale.y,
         boxColliderDimensions.z * transform.localScale.z);
 
+    public float Mass = 1;
+
     public Vector3 Velocity;
     public Vector3 AngularVelocity;
 

@@ -104,17 +104,18 @@ public class World : MonoBehaviour
             {
                 dynamics[dynamicIndex] = rb;
 
+                float inverseMass = math.rcp(pb.Mass);
+                float3 inverseInteriaTensor = math.rcp(pb.BoxCollider.Value.MassProperties.MassDistribution.InertiaTensor * pb.Mass);
+                float angularExpansionFactor = pb.BoxCollider.Value.MassProperties.AngularExpansionFactor;
+
                 motionVelocities[dynamicIndex] = new MotionVelocity()
                 {
                     LinearVelocity = pb.Velocity,
                     AngularVelocity = pb.AngularVelocity,
-                    // Intertia tensor = ~(0.16, 0.16, 0.16)
-                    InverseInertia = 6f,
-                    // Mass = 1.
-                    InverseMass = 1,
+                    InverseInertia = inverseInteriaTensor,
+                    InverseMass = inverseMass,
                     GravityFactor = 1,
-                    // Not sure what this is, just set it to the default.
-                    AngularExpansionFactor = 0.86f
+                    AngularExpansionFactor = angularExpansionFactor
                 };
 
                 // Using defaults for these values.
