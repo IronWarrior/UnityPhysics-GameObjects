@@ -1,4 +1,3 @@
-using UnityEngine;
 using Unity.Physics;
 using Unity.Mathematics;
 using Unity.Entities;
@@ -32,9 +31,9 @@ public class World : IDisposable
                 Center = float3.zero
             };
 
-            var mat = Unity.Physics.Material.Default;
+            var mat = Material.Default;
             mat.CollisionResponse = CollisionResponsePolicy.CollideRaiseCollisionEvents;
-            var blob = Unity.Physics.BoxCollider.Create(geo, CollisionFilter.Default, mat);
+            var blob = BoxCollider.Create(geo, CollisionFilter.Default, mat);
             store.AddUniqueBlobAsset(ref blob);
 
             pb.BoxCollider = blob;
