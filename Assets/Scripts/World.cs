@@ -118,9 +118,8 @@ public class World : MonoBehaviour
                     AngularExpansionFactor = angularExpansionFactor
                 };
 
-                // Using defaults for these values.
-                quaternion interiaOrientation = quaternion.identity;
-                float3 centerOfMass = float3.zero;
+                quaternion interiaOrientation = pb.BoxCollider.Value.MassProperties.MassDistribution.Transform.rot;
+                float3 centerOfMass = pb.BoxCollider.Value.MassProperties.MassDistribution.Transform.pos;
 
                 motionDatas[dynamicIndex] = new MotionData()
                 {
