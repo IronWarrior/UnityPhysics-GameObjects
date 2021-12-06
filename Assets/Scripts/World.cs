@@ -3,21 +3,15 @@ using Unity.Physics;
 using Unity.Mathematics;
 using Unity.Entities;
 using System.Linq;
+using System;
 
-public class World : MonoBehaviour
+public class World : IDisposable
 {
-    [SerializeField]
-    float timestep = 0.01f;
-
-    [SerializeField]
-    float3 gravity = new float3(0, -9.8f, 0);
-
     private PhysicsWorld world;
-    private BlobAssetStore store;
 
-    private float accumulatedDeltaTime;
+    private readonly BlobAssetStore store;
 
-    private void Awake()
+    public World()
     {
         store = new BlobAssetStore();
 
@@ -29,7 +23,7 @@ public class World : MonoBehaviour
         // Maybe better to increment version to 1 initially?
         int entity = 1;
 
-        foreach (var pb in FindObjectsOfType<PhysicsBody>())
+        foreach (var pb in UnityEngine.Object.FindObjectsOfType<PhysicsBody>())
         {
             BoxGeometry geo = new BoxGeometry()
             {
@@ -49,27 +43,15 @@ public class World : MonoBehaviour
         }
     }
 
-    private void Update()
-    {
-        accumulatedDeltaTime += Time.deltaTime;
-
-        while (accumulatedDeltaTime > timestep)
-        {
-            Step();
-
-            accumulatedDeltaTime -= timestep;
-        }
-    }
-
-    private void OnDestroy()
+    public void Dispose()
     {
         store.Dispose();
         world.Dispose();
     }
 
-    private void Rebuild()
+    private void Rebuild(float deltaTime, float3 gravity)
     {
-        var bodies = FindObjectsOfType<PhysicsBody>();
+        var bodies = UnityEngine.Object.FindObjectsOfType<PhysicsBody>();
 
         int dynamicCount = bodies.Count((b) => b.Motion == PhysicsBody.MotionType.Dynamic);
         int staticCount = bodies.Count((b) => b.Motion == PhysicsBody.MotionType.Static);
@@ -147,17 +129,17 @@ public class World : MonoBehaviour
 
         // Prepare the world for collision detection. If this method is not called no
         // collisions will occur during physics step.
-        world.CollisionWorld.BuildBroadphase(ref world, timestep, gravity);
+        world.CollisionWorld.BuildBroadphase(ref world, deltaTime, gravity);
     }
 
-    private void Step()
+    public void Step(float deltaTime, float3 gravity)
     {
-        Rebuild();
+        Rebuild(deltaTime, gravity);
 
         SimulationStepInput input = new SimulationStepInput()
         {
             World = world,
-            TimeStep = timestep,
+            TimeStep = deltaTime,
             Gravity = gravity,
             NumSolverIterations = 5,
             // Setting this to true causes the dynamic world resulting from
@@ -175,7 +157,7 @@ public class World : MonoBehaviour
         context.Dispose();
 
         // Copy the state from the PhysicsWorld back to the PhysicsBody components.
-        foreach (var pb in FindObjectsOfType<PhysicsBody>())
+        foreach (var pb in UnityEngine.Object.FindObjectsOfType<PhysicsBody>())
         {
             int rbIndex = world.GetRigidBodyIndex(new Entity() { Index = pb.Entity });
             var rb = world.Bodies[rbIndex];
