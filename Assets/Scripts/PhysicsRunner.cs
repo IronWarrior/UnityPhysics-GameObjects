@@ -18,6 +18,14 @@ public class PhysicsRunner : MonoBehaviour
         world = new World();
     }
 
+    private void Start()
+    {
+        foreach (var pb in FindObjectsOfType<PhysicsBody>())
+        {
+            world.AddPhysicsBody(pb);
+        }
+    }
+
     private void OnDestroy()
     {
         world.Dispose();

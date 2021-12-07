@@ -3,43 +3,26 @@ using Unity.Mathematics;
 using Unity.Entities;
 using System.Linq;
 using System;
+using System.Collections.Generic;
 
 public class World : IDisposable
 {
     private PhysicsWorld world;
 
-    private readonly BlobAssetStore store;
+    private readonly BlobAssetStore store = new BlobAssetStore();
+
+    // TODO: Better data structure for faster remove, etc.
+    private readonly List<PhysicsBody> bodies = new List<PhysicsBody>();
+
+    // Start at entity 1, since an entity with index 0/version 0 is considered null.
+    // Maybe better to increment version to 1 initially?
+    private int currentEntityIndex = 1;
 
     public World()
     {
-        store = new BlobAssetStore();
-
         // Initialize the world's capacity to all zeroes, as the capacity
         // is reset every Rebuild() call.
         world = new PhysicsWorld(0, 0, 0);
-
-        // Start at entity 1, since an entity with index 0/version 0 is considered null.
-        // Maybe better to increment version to 1 initially?
-        int entity = 1;
-
-        foreach (var pb in UnityEngine.Object.FindObjectsOfType<PhysicsBody>())
-        {
-            BoxGeometry geo = new BoxGeometry()
-            {
-                Size = pb.BoxColliderSize,
-                Orientation = quaternion.identity,
-                Center = float3.zero
-            };
-
-            var mat = Material.Default;
-            mat.CollisionResponse = CollisionResponsePolicy.CollideRaiseCollisionEvents;
-            var blob = BoxCollider.Create(geo, CollisionFilter.Default, mat);
-            store.AddUniqueBlobAsset(ref blob);
-
-            pb.BoxCollider = blob;
-            pb.Entity = entity;
-            entity++;
-        }
     }
 
     public void Dispose()
@@ -48,10 +31,76 @@ public class World : IDisposable
         world.Dispose();
     }
 
+    public void AddPhysicsBody(PhysicsBody pb)
+    {
+        BoxGeometry geo = new BoxGeometry()
+        {
+            Size = pb.BoxColliderSize,
+            Orientation = quaternion.identity,
+            Center = float3.zero
+        };
+
+        var mat = Material.Default;
+        mat.CollisionResponse = CollisionResponsePolicy.CollideRaiseCollisionEvents;
+        var blob = BoxCollider.Create(geo, CollisionFilter.Default, mat);
+        store.AddUniqueBlobAsset(ref blob);
+
+        pb.BoxCollider = blob;
+        pb.Entity = currentEntityIndex;
+        currentEntityIndex++;
+
+        bodies.Add(pb);
+    }
+
+    public void RemovePhysicsBody(PhysicsBody pb)
+    {
+        bodies.Remove(pb);
+    }
+
+    public void Step(float deltaTime, float3 gravity)
+    {
+        Rebuild(deltaTime, gravity);
+
+        SimulationStepInput input = new SimulationStepInput()
+        {
+            World = world,
+            TimeStep = deltaTime,
+            Gravity = gravity,
+            NumSolverIterations = 5,
+            // Setting this to true causes the dynamic world resulting from
+            // integrating velocities to be written back to the collision world,
+            // which is used to set the game object transform positions.
+            SynchronizeCollisionWorld = true
+        };
+
+        SimulationContext context = new SimulationContext();
+        context.Reset(input);
+
+        Simulation.StepImmediate(input, ref context);
+
+        // Can retrieve collision/trigger events here prior to disposal.
+        context.Dispose();
+
+        // Copy the state from the PhysicsWorld back to the PhysicsBody components.
+        foreach (var pb in bodies)
+        {
+            int rbIndex = world.GetRigidBodyIndex(new Entity() { Index = pb.Entity });
+            var rb = world.Bodies[rbIndex];
+
+            pb.transform.position = rb.WorldFromBody.pos;
+            pb.transform.rotation = rb.WorldFromBody.rot;
+
+            if (pb.Motion == PhysicsBody.MotionType.Dynamic)
+            {
+                pb.Velocity = world.MotionVelocities[rbIndex].LinearVelocity;
+                pb.AngularVelocity = world.MotionVelocities[rbIndex].AngularVelocity;
+            }
+        }
+    }
+
     private void Rebuild(float deltaTime, float3 gravity)
     {
-        var bodies = UnityEngine.Object.FindObjectsOfType<PhysicsBody>();
-
+        // TODO: Can keep track of count with Add/Remove instead of recounting each time.
         int dynamicCount = bodies.Count((b) => b.Motion == PhysicsBody.MotionType.Dynamic);
         int staticCount = bodies.Count((b) => b.Motion == PhysicsBody.MotionType.Static);
 
@@ -129,46 +178,5 @@ public class World : IDisposable
         // Prepare the world for collision detection. If this method is not called no
         // collisions will occur during physics step.
         world.CollisionWorld.BuildBroadphase(ref world, deltaTime, gravity);
-    }
-
-    public void Step(float deltaTime, float3 gravity)
-    {
-        Rebuild(deltaTime, gravity);
-
-        SimulationStepInput input = new SimulationStepInput()
-        {
-            World = world,
-            TimeStep = deltaTime,
-            Gravity = gravity,
-            NumSolverIterations = 5,
-            // Setting this to true causes the dynamic world resulting from
-            // integrating velocities to be written back to the collision world,
-            // which is used to set the game object transform positions.
-            SynchronizeCollisionWorld = true
-        };
-
-        SimulationContext context = new SimulationContext();
-        context.Reset(input);
-
-        Simulation.StepImmediate(input, ref context);               
-
-        // Can retrieve collision/trigger events here prior to disposal.
-        context.Dispose();
-
-        // Copy the state from the PhysicsWorld back to the PhysicsBody components.
-        foreach (var pb in UnityEngine.Object.FindObjectsOfType<PhysicsBody>())
-        {
-            int rbIndex = world.GetRigidBodyIndex(new Entity() { Index = pb.Entity });
-            var rb = world.Bodies[rbIndex];
-
-            pb.transform.position = rb.WorldFromBody.pos;
-            pb.transform.rotation = rb.WorldFromBody.rot;
-
-            if (pb.Motion == PhysicsBody.MotionType.Dynamic)
-            {
-                pb.Velocity = world.MotionVelocities[rbIndex].LinearVelocity;
-                pb.AngularVelocity = world.MotionVelocities[rbIndex].AngularVelocity;
-            }
-        }
     }
 }
