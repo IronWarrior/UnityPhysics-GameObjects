@@ -18,6 +18,8 @@ public class World : IDisposable
     // Maybe better to increment version to 1 initially?
     private int currentEntityIndex = 1;
 
+    private int dynamicCount, staticCount;
+
     public World()
     {
         // Initialize the world's capacity to all zeroes, as the capacity
@@ -33,6 +35,11 @@ public class World : IDisposable
 
     public void AddPhysicsBody(PhysicsBody pb)
     {
+        if (pb.Motion == PhysicsBody.MotionType.Dynamic)
+            dynamicCount++;
+        else
+            staticCount++;
+
         BoxGeometry geo = new BoxGeometry()
         {
             Size = pb.BoxColliderSize,
@@ -54,6 +61,11 @@ public class World : IDisposable
 
     public void RemovePhysicsBody(PhysicsBody pb)
     {
+        if (pb.Motion == PhysicsBody.MotionType.Dynamic)
+            dynamicCount--;
+        else
+            staticCount--;
+
         bodies.Remove(pb);
     }
 
@@ -100,10 +112,6 @@ public class World : IDisposable
 
     private void Rebuild(float deltaTime, float3 gravity)
     {
-        // TODO: Can keep track of count with Add/Remove instead of recounting each time.
-        int dynamicCount = bodies.Count((b) => b.Motion == PhysicsBody.MotionType.Dynamic);
-        int staticCount = bodies.Count((b) => b.Motion == PhysicsBody.MotionType.Static);
-
         // Reset() resizes array capacities.
         world.Reset(staticCount, dynamicCount, 0);
 
