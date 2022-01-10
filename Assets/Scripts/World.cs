@@ -164,7 +164,7 @@ public class World : IDisposable
                     AngularVelocity = pb.LocalAngularVelocity,
                     InverseInertia = inverseInteriaTensor,
                     InverseMass = inverseMass,
-                    GravityFactor = 1,
+                    GravityFactor = pb.GravityScale,
                     AngularExpansionFactor = angularExpansionFactor
                 };
 

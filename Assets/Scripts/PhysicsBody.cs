@@ -18,6 +18,7 @@ public class PhysicsBody : MonoBehaviour
         boxColliderDimensions.z * transform.localScale.z);
 
     public float Mass = 1;
+    public float GravityScale = 1;
 
     /// <summary>
     /// Linear velocity in world space.
