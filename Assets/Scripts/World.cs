@@ -7,11 +7,14 @@ using System.Collections.Generic;
 public class World : IDisposable
 {
     private PhysicsWorld world;
+    private SimulationContext context = new SimulationContext();
 
     private readonly BlobAssetStore store = new BlobAssetStore();
 
     // TODO: Better data structure for faster remove, etc.
     private readonly List<PhysicsBody> bodies = new List<PhysicsBody>();
+    // TODO: Dictionary iteration is non-deterministic in .NET...is there any issue with accessing individual elements?
+    private readonly Dictionary<int, PhysicsBody> entityIdToBodies = new Dictionary<int, PhysicsBody>();
 
     // Start at entity 1, since an entity with index 0/version 0 is considered null.
     // Maybe better to increment version to 1 initially?
@@ -29,6 +32,7 @@ public class World : IDisposable
     public void Dispose()
     {
         store.Dispose();
+        context.Dispose();
         world.Dispose();
     }
 
@@ -47,7 +51,7 @@ public class World : IDisposable
         };
 
         var mat = Material.Default;
-        mat.CollisionResponse = CollisionResponsePolicy.CollideRaiseCollisionEvents;
+        mat.CollisionResponse = pb.CollisionResponse;
         var blob = BoxCollider.Create(geo, CollisionFilter.Default, mat);
         store.AddUniqueBlobAsset(ref blob);
 
@@ -56,6 +60,7 @@ public class World : IDisposable
         currentEntityIndex++;
 
         bodies.Add(pb);
+        entityIdToBodies[pb.Entity] = pb;
     }
 
     public void RemovePhysicsBody(PhysicsBody pb)
@@ -66,6 +71,7 @@ public class World : IDisposable
             staticCount--;
 
         bodies.Remove(pb);
+        entityIdToBodies.Remove(pb.Entity);
     }
 
     public void Step(float deltaTime, float3 gravity)
@@ -84,13 +90,9 @@ public class World : IDisposable
             SynchronizeCollisionWorld = true
         };
 
-        SimulationContext context = new SimulationContext();
         context.Reset(input);
 
         Simulation.StepImmediate(input, ref context);
-
-        // Can retrieve collision/trigger events here prior to disposal.
-        context.Dispose();
 
         // Copy the state from the PhysicsWorld back to the PhysicsBody components.
         foreach (var pb in bodies)
@@ -104,8 +106,19 @@ public class World : IDisposable
             if (pb.Motion == PhysicsBody.MotionType.Dynamic)
             {
                 pb.Velocity = world.MotionVelocities[rbIndex].LinearVelocity;
-                pb.AngularVelocity = world.MotionVelocities[rbIndex].AngularVelocity;
+                pb.LocalAngularVelocity = world.MotionVelocities[rbIndex].AngularVelocity;
             }
+        }
+
+        var triggers = context.TriggerEvents.GetEnumerator();
+
+        while (triggers.MoveNext())
+        {
+            var pbA = entityIdToBodies[world.Bodies[triggers.Current.BodyIndexA].Entity.Index];
+            var pbB = entityIdToBodies[world.Bodies[triggers.Current.BodyIndexB].Entity.Index];
+
+            pbA.OnTriggerEvent(pbB);
+            pbB.OnTriggerEvent(pbA);
         }
     }
 
@@ -148,7 +161,7 @@ public class World : IDisposable
                 motionVelocities[dynamicIndex] = new MotionVelocity()
                 {
                     LinearVelocity = pb.Velocity,
-                    AngularVelocity = pb.AngularVelocity,
+                    AngularVelocity = pb.LocalAngularVelocity,
                     InverseInertia = inverseInteriaTensor,
                     InverseMass = inverseMass,
                     GravityFactor = 1,

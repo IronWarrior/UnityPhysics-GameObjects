@@ -75,3 +75,6 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 
 *.vsconfig
+
+# Directory dump is reserved for small experiments you do not wish to commit
+Assets/Dump*

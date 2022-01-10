@@ -1,10 +1,13 @@
 using Unity.Entities;
+using Unity.Mathematics;
 using UnityEngine;
 
 public class PhysicsBody : MonoBehaviour
 {
     [SerializeField]
     Vector3 boxColliderDimensions = Vector3.one;
+
+    public Unity.Physics.CollisionResponsePolicy CollisionResponse;
 
     public enum MotionType { Dynamic, Static }
 
@@ -16,11 +19,46 @@ public class PhysicsBody : MonoBehaviour
 
     public float Mass = 1;
 
+    /// <summary>
+    /// Linear velocity in world space.
+    /// </summary>
     public Vector3 Velocity;
+    
+    /// <summary>
+    /// Angular velocity in world space.
+    /// </summary>
     public Vector3 AngularVelocity;
+
+    public Vector3 LocalAngularVelocity
+    {
+        get => CalculateLocalAngularVelocity(AngularVelocity);
+        set => AngularVelocity = CalculateWorldAngularVelocity(value);
+    }
 
     public int Entity;
     public BlobAssetReference<Unity.Physics.Collider> BoxCollider;
+
+    public event System.Action<PhysicsBody> OnTrigger;
+
+    // TODO: Internal.
+    public void OnTriggerEvent(PhysicsBody other)
+    {
+        OnTrigger?.Invoke(other);
+    }
+
+    private float3 CalculateLocalAngularVelocity(Vector3 worldAngularVelocity)
+    {
+        quaternion inertiaOrientationInWorldSpace = math.mul(transform.rotation, BoxCollider.Value.MassProperties.MassDistribution.Transform.rot);
+        float3 angularVelocityInertiaSpace = math.rotate(math.inverse(inertiaOrientationInWorldSpace), worldAngularVelocity);
+
+        return angularVelocityInertiaSpace;
+    }
+
+    private float3 CalculateWorldAngularVelocity(Vector3 localAngularVelocity)
+    {
+        quaternion inertiaOrientationInWorldSpace = math.mul(transform.rotation, BoxCollider.Value.MassProperties.MassDistribution.Transform.rot);
+        return math.rotate(inertiaOrientationInWorldSpace, localAngularVelocity);
+    }
 
     private void OnDrawGizmosSelected()
     {

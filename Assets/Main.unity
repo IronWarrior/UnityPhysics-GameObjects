@@ -155,6 +155,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boxColliderDimensions: {x: 1, y: 1, z: 1}
+  CollisionResponse: 0
   Motion: 0
   Mass: 1
   Velocity: {x: 0, y: 0, z: 0}
@@ -255,6 +256,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boxColliderDimensions: {x: 1, y: 1, z: 1}
+  CollisionResponse: 0
   Motion: 0
   Mass: 1
   Velocity: {x: 0, y: 0, z: 0}
@@ -355,6 +357,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boxColliderDimensions: {x: 1, y: 1, z: 1}
+  CollisionResponse: 0
   Motion: 0
   Mass: 1
   Velocity: {x: 0, y: 0, z: 0}
@@ -455,6 +458,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boxColliderDimensions: {x: 1, y: 1, z: 1}
+  CollisionResponse: 0
   Motion: 0
   Mass: 1
   Velocity: {x: 0, y: 0, z: 0}
@@ -555,6 +559,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boxColliderDimensions: {x: 1, y: 1, z: 1}
+  CollisionResponse: 0
   Motion: 0
   Mass: 1
   Velocity: {x: 0, y: 0, z: 0}
@@ -655,6 +660,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boxColliderDimensions: {x: 1, y: 1, z: 1}
+  CollisionResponse: 0
   Motion: 0
   Mass: 1
   Velocity: {x: 0, y: 0, z: 0}
@@ -735,6 +741,7 @@ GameObject:
   - component: {fileID: 525972033}
   - component: {fileID: 525972032}
   - component: {fileID: 525972035}
+  - component: {fileID: 525972036}
   m_Layer: 0
   m_Name: Static
   m_TagString: Untagged
@@ -818,11 +825,25 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boxColliderDimensions: {x: 1, y: 1, z: 1}
+  CollisionResponse: 0
   Motion: 1
   Mass: 1
   Velocity: {x: 0, y: 0, z: 0}
   AngularVelocity: {x: 0, y: 0, z: 0}
   Entity: 0
+--- !u!114 &525972036
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 525972031}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a642893a52b20bf4a85d5551ef5ba25e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  teleportLocation: {fileID: 0}
 --- !u!1 &559131988
 GameObject:
   m_ObjectHideFlags: 0
@@ -855,6 +876,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boxColliderDimensions: {x: 1, y: 1, z: 1}
+  CollisionResponse: 0
   Motion: 0
   Mass: 1
   Velocity: {x: 0, y: 0, z: 0}
@@ -955,6 +977,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boxColliderDimensions: {x: 1, y: 1, z: 1}
+  CollisionResponse: 0
   Motion: 0
   Mass: 1
   Velocity: {x: 0, y: 0, z: 0}
@@ -1055,6 +1078,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boxColliderDimensions: {x: 1, y: 1, z: 1}
+  CollisionResponse: 0
   Motion: 0
   Mass: 1
   Velocity: {x: 0, y: 0, z: 0}
@@ -1155,6 +1179,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boxColliderDimensions: {x: 1, y: 1, z: 1}
+  CollisionResponse: 0
   Motion: 0
   Mass: 1
   Velocity: {x: 0, y: 0, z: 0}
@@ -1255,6 +1280,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boxColliderDimensions: {x: 1, y: 1, z: 1}
+  CollisionResponse: 0
   Motion: 0
   Mass: 1
   Velocity: {x: 0, y: 0, z: 0}
@@ -1355,6 +1381,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boxColliderDimensions: {x: 1, y: 1, z: 1}
+  CollisionResponse: 0
   Motion: 0
   Mass: 1
   Velocity: {x: 0, y: 0, z: 0}
@@ -1455,6 +1482,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boxColliderDimensions: {x: 1, y: 1, z: 1}
+  CollisionResponse: 0
   Motion: 0
   Mass: 1
   Velocity: {x: 0, y: 0, z: 0}
@@ -1555,6 +1583,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boxColliderDimensions: {x: 1, y: 1, z: 1}
+  CollisionResponse: 0
   Motion: 0
   Mass: 1
   Velocity: {x: 0, y: 0, z: 0}
@@ -1655,6 +1684,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boxColliderDimensions: {x: 1, y: 1, z: 1}
+  CollisionResponse: 0
   Motion: 0
   Mass: 1
   Velocity: {x: 0, y: 0, z: 0}
@@ -1755,6 +1785,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boxColliderDimensions: {x: 1, y: 1, z: 1}
+  CollisionResponse: 0
   Motion: 0
   Mass: 1
   Velocity: {x: 0, y: 0, z: 0}
@@ -1948,6 +1979,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boxColliderDimensions: {x: 1, y: 1, z: 1}
+  CollisionResponse: 0
   Motion: 0
   Mass: 1
   Velocity: {x: 0, y: 0, z: 0}
@@ -2048,6 +2080,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boxColliderDimensions: {x: 1, y: 1, z: 1}
+  CollisionResponse: 0
   Motion: 0
   Mass: 1
   Velocity: {x: 0, y: 0, z: 0}
@@ -2148,6 +2181,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boxColliderDimensions: {x: 1, y: 1, z: 1}
+  CollisionResponse: 0
   Motion: 0
   Mass: 1
   Velocity: {x: 0, y: 0, z: 0}
@@ -2248,6 +2282,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boxColliderDimensions: {x: 1, y: 1, z: 1}
+  CollisionResponse: 0
   Motion: 0
   Mass: 1
   Velocity: {x: 0, y: 0, z: 0}
@@ -2348,6 +2383,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boxColliderDimensions: {x: 1, y: 1, z: 1}
+  CollisionResponse: 0
   Motion: 0
   Mass: 1
   Velocity: {x: 0, y: 0, z: 0}
@@ -2559,6 +2595,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boxColliderDimensions: {x: 1, y: 1, z: 1}
+  CollisionResponse: 0
   Motion: 0
   Mass: 1
   Velocity: {x: 0, y: 0, z: 0}
@@ -2596,6 +2633,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boxColliderDimensions: {x: 1, y: 1, z: 1}
+  CollisionResponse: 0
   Motion: 0
   Mass: 1
   Velocity: {x: 0, y: 0, z: 0}
@@ -2696,6 +2734,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boxColliderDimensions: {x: 1, y: 1, z: 1}
+  CollisionResponse: 0
   Motion: 0
   Mass: 1
   Velocity: {x: 0, y: 0, z: 0}
@@ -2796,6 +2835,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boxColliderDimensions: {x: 1, y: 1, z: 1}
+  CollisionResponse: 0
   Motion: 0
   Mass: 1
   Velocity: {x: 0, y: 0, z: 0}
@@ -2896,6 +2936,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boxColliderDimensions: {x: 1, y: 1, z: 1}
+  CollisionResponse: 0
   Motion: 0
   Mass: 1
   Velocity: {x: 0, y: 0, z: 0}
@@ -2996,6 +3037,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boxColliderDimensions: {x: 1, y: 1, z: 1}
+  CollisionResponse: 0
   Motion: 0
   Mass: 1
   Velocity: {x: 0, y: 0, z: 0}
@@ -3096,6 +3138,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boxColliderDimensions: {x: 1, y: 1, z: 1}
+  CollisionResponse: 0
   Motion: 0
   Mass: 1
   Velocity: {x: 0, y: 0, z: 0}
@@ -3196,6 +3239,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boxColliderDimensions: {x: 1, y: 1, z: 1}
+  CollisionResponse: 0
   Motion: 0
   Mass: 1
   Velocity: {x: 0, y: 0, z: 0}
@@ -3296,6 +3340,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boxColliderDimensions: {x: 1, y: 1, z: 1}
+  CollisionResponse: 0
   Motion: 0
   Mass: 1
   Velocity: {x: 0, y: 0, z: 0}
@@ -3396,6 +3441,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boxColliderDimensions: {x: 1, y: 1, z: 1}
+  CollisionResponse: 0
   Motion: 0
   Mass: 1
   Velocity: {x: 0, y: 0, z: 0}
@@ -3496,6 +3542,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boxColliderDimensions: {x: 1, y: 1, z: 1}
+  CollisionResponse: 0
   Motion: 0
   Mass: 5
   Velocity: {x: 0, y: 0, z: 0}
