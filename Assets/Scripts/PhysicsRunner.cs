@@ -9,6 +9,9 @@ public class PhysicsRunner : MonoBehaviour
     [SerializeField]
     float3 gravity = new float3(0, -9.8f, 0);
 
+    [SerializeField]
+    int solverIterations = 5;
+
     public event System.Action<float> OnUpdate;
 
     private World world;
@@ -26,6 +29,11 @@ public class PhysicsRunner : MonoBehaviour
         {
             world.AddPhysicsBody(pb);
         }
+
+        foreach (var pj in FindObjectsOfType<PhysicsJoint>())
+        {
+            world.AddPhysicsJoint(pj);
+        }
     }
 
     private void OnDestroy()
@@ -41,7 +49,7 @@ public class PhysicsRunner : MonoBehaviour
         {
             OnUpdate?.Invoke(deltaTime);
 
-            world.Step(deltaTime, gravity);
+            world.Step(deltaTime, gravity, Mathf.Clamp(solverIterations, 1, int.MaxValue));
 
             accumulatedDeltaTime -= deltaTime;
         }
