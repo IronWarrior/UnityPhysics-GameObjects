@@ -12,33 +12,32 @@ public class PhysicsRunner : MonoBehaviour
     [SerializeField]
     int solverIterations = 5;
 
+    public World World { get; private set; }
     public event System.Action<float> OnUpdate;
-
-    private World world;
 
     private float accumulatedDeltaTime;
 
     private void Awake()
     {
-        world = new World();
+        World = new World();
     }
 
     private void Start()
     {
         foreach (var pb in FindObjectsOfType<PhysicsBody>())
         {
-            world.AddPhysicsBody(pb);
+            World.AddPhysicsBody(pb);
         }
 
         foreach (var pj in FindObjectsOfType<PhysicsJoint>())
         {
-            world.AddPhysicsJoint(pj);
+            World.AddPhysicsJoint(pj);
         }
     }
 
     private void OnDestroy()
     {
-        world.Dispose();
+        World.Dispose();
     }
 
     private void Update()
@@ -49,7 +48,7 @@ public class PhysicsRunner : MonoBehaviour
         {
             OnUpdate?.Invoke(deltaTime);
 
-            world.Step(deltaTime, gravity, Mathf.Clamp(solverIterations, 1, int.MaxValue));
+            World.Step(deltaTime, gravity, Mathf.Clamp(solverIterations, 1, int.MaxValue));
 
             accumulatedDeltaTime -= deltaTime;
         }

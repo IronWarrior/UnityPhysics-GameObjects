@@ -6,7 +6,8 @@ using System.Collections.Generic;
 
 public class World : IDisposable
 {
-    private PhysicsWorld world;
+    public PhysicsWorld PhysicsWorld;
+
     private SimulationContext context = new SimulationContext();
 
     private readonly BlobAssetStore store = new BlobAssetStore();
@@ -28,14 +29,14 @@ public class World : IDisposable
     {
         // Initialize the world's capacity to all zeroes, as the capacity
         // is reset every Rebuild() call.
-        world = new PhysicsWorld(0, 0, 0);
+        PhysicsWorld = new PhysicsWorld(0, 0, 0);
     }
 
     public void Dispose()
     {
         store.Dispose();
         context.Dispose();
-        world.Dispose();
+        PhysicsWorld.Dispose();
     }
 
     public void AddPhysicsJoint(PhysicsJoint joint)
@@ -92,7 +93,7 @@ public class World : IDisposable
 
         SimulationStepInput input = new SimulationStepInput()
         {
-            World = world,
+            World = PhysicsWorld,
             TimeStep = deltaTime,
             Gravity = gravity,
             NumSolverIterations = solverIterations,
@@ -109,16 +110,16 @@ public class World : IDisposable
         // Copy the state from the PhysicsWorld back to the PhysicsBody components.
         foreach (var pb in bodies)
         {
-            int rbIndex = world.GetRigidBodyIndex(new Entity() { Index = pb.Entity });
-            var rb = world.Bodies[rbIndex];
+            int rbIndex = PhysicsWorld.GetRigidBodyIndex(new Entity() { Index = pb.Entity });
+            var rb = PhysicsWorld.Bodies[rbIndex];
 
             pb.transform.position = rb.WorldFromBody.pos;
             pb.transform.rotation = rb.WorldFromBody.rot;
 
             if (pb.Motion == PhysicsBody.MotionType.Dynamic)
             {
-                pb.Velocity = world.MotionVelocities[rbIndex].LinearVelocity;
-                pb.LocalAngularVelocity = world.MotionVelocities[rbIndex].AngularVelocity;
+                pb.Velocity = PhysicsWorld.MotionVelocities[rbIndex].LinearVelocity;
+                pb.LocalAngularVelocity = PhysicsWorld.MotionVelocities[rbIndex].AngularVelocity;
             }
         }
 
@@ -126,8 +127,8 @@ public class World : IDisposable
 
         while (triggers.MoveNext())
         {
-            var pbA = entityIdToBodies[world.Bodies[triggers.Current.BodyIndexA].Entity.Index];
-            var pbB = entityIdToBodies[world.Bodies[triggers.Current.BodyIndexB].Entity.Index];
+            var pbA = entityIdToBodies[PhysicsWorld.Bodies[triggers.Current.BodyIndexA].Entity.Index];
+            var pbB = entityIdToBodies[PhysicsWorld.Bodies[triggers.Current.BodyIndexB].Entity.Index];
 
             pbA.OnTriggerEvent(pbB);
             pbB.OnTriggerEvent(pbA);
@@ -137,17 +138,17 @@ public class World : IDisposable
     private void Rebuild(float deltaTime, float3 gravity)
     {
         // Reset() resizes array capacities.
-        world.Reset(staticCount, dynamicCount, physicsJoints.Count);
+        PhysicsWorld.Reset(staticCount, dynamicCount, physicsJoints.Count);
 
         // PhysicsWorld.DynamicBodies and .StaticBodies are sub arrays of the 
         // same native array, PhysicsWorld.Bodies.
         int staticIndex = 0, dynamicIndex = 0;
 
-        var statics = world.StaticBodies;
-        var dynamics = world.DynamicBodies;
+        var statics = PhysicsWorld.StaticBodies;
+        var dynamics = PhysicsWorld.DynamicBodies;
 
-        var motionDatas = world.MotionDatas;
-        var motionVelocities = world.MotionVelocities;
+        var motionDatas = PhysicsWorld.MotionDatas;
+        var motionVelocities = PhysicsWorld.MotionVelocities;
 
         foreach (var pb in bodies)
         {
@@ -205,16 +206,16 @@ public class World : IDisposable
         // Updating index maps after rebuid is essential to be able to retrieve
         // rigidbodies by their entity ID, which is done when we want to copy
         // the rigidbody state back to the PhysicsBody component.
-        world.CollisionWorld.UpdateBodyIndexMap();
+        PhysicsWorld.CollisionWorld.UpdateBodyIndexMap();
 
-        var joints = world.Joints;
+        var joints = PhysicsWorld.Joints;
 
         for (int i = 0; i < physicsJoints.Count; i++)
         {
             var physicsJoint = physicsJoints[i];
 
-            int bodyIndexB = world.GetRigidBodyIndex(new Entity() { Index = physicsJoint.Body.Entity });
-            int bodyIndexA = world.GetRigidBodyIndex(new Entity() { Index = physicsJoint.Target.Entity });
+            int bodyIndexB = PhysicsWorld.GetRigidBodyIndex(new Entity() { Index = physicsJoint.Body.Entity });
+            int bodyIndexA = PhysicsWorld.GetRigidBodyIndex(new Entity() { Index = physicsJoint.Target.Entity });
 
             joints[i] = new Joint()
             {
@@ -233,10 +234,10 @@ public class World : IDisposable
             };
         }
 
-        world.DynamicsWorld.UpdateJointIndexMap();
+        PhysicsWorld.DynamicsWorld.UpdateJointIndexMap();
 
         // Prepare the world for collision detection. If this method is not called no
         // collisions will occur during physics step.
-        world.CollisionWorld.BuildBroadphase(ref world, deltaTime, gravity);
+        PhysicsWorld.CollisionWorld.BuildBroadphase(ref PhysicsWorld, deltaTime, gravity);
     }
 }
