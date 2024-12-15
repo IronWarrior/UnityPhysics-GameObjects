@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -11,6 +12,11 @@ public class PhysicsRunner : MonoBehaviour
 
     [SerializeField]
     int solverIterations = 5;
+
+    [SerializeField]
+    Mode currentMode;
+
+    public enum Mode { UPhysics, PhysX };
 
     public World World { get; private set; }
     public event System.Action<float> OnUpdate;
@@ -48,7 +54,20 @@ public class PhysicsRunner : MonoBehaviour
         {
             OnUpdate?.Invoke(deltaTime);
 
-            World.Step(deltaTime, gravity, Mathf.Clamp(solverIterations, 1, int.MaxValue));
+            if (currentMode == Mode.UPhysics)
+                World.Step(deltaTime, gravity, Mathf.Clamp(solverIterations, 1, int.MaxValue));
+            else
+            {
+                Stopwatch sw = new Stopwatch();
+
+                sw.Start();
+
+                Physics.Simulate(deltaTime);
+
+                sw.Stop();
+
+                UnityEngine.Debug.Log($"SW: {sw.Elapsed.TotalMilliseconds}");
+            }
 
             accumulatedDeltaTime -= deltaTime;
         }

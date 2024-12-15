@@ -10,7 +10,7 @@ public class World : IDisposable
 
     private SimulationContext context = new SimulationContext();
 
-    private readonly BlobAssetStore store = new BlobAssetStore();
+    private readonly BlobAssetStore store = new BlobAssetStore(1000);
 
     // TODO: Better data structure for faster remove, etc.
     private readonly List<PhysicsBody> bodies = new List<PhysicsBody>();
@@ -66,7 +66,7 @@ public class World : IDisposable
         var mat = Material.Default;
         mat.CollisionResponse = pb.CollisionResponse;
         var blob = BoxCollider.Create(geo, CollisionFilter.Default, mat);
-        store.AddUniqueBlobAsset(ref blob);
+        store.TryAdd(ref blob);
 
         pb.BoxCollider = blob;
         pb.Entity = currentEntityIndex;
@@ -89,9 +89,9 @@ public class World : IDisposable
 
     public void Step(float deltaTime, float3 gravity, int solverIterations)
     {
-        Rebuild(deltaTime, gravity);
+        BuildPhysicsWorld(deltaTime, gravity);
 
-        SimulationStepInput input = new SimulationStepInput()
+        SimulationStepInput input = new()
         {
             World = PhysicsWorld,
             TimeStep = deltaTime,
@@ -135,10 +135,10 @@ public class World : IDisposable
         }
     }
 
-    private void Rebuild(float deltaTime, float3 gravity)
+    private void BuildPhysicsWorld(float deltaTime, float3 gravity)
     {
         // Reset() resizes array capacities.
-        PhysicsWorld.Reset(staticCount, dynamicCount, physicsJoints.Count);
+        PhysicsWorld.Reset(staticCount, dynamicCount, 0);
 
         // PhysicsWorld.DynamicBodies and .StaticBodies are sub arrays of the 
         // same native array, PhysicsWorld.Bodies.
@@ -160,7 +160,8 @@ public class World : IDisposable
             {
                 WorldFromBody = transform,
                 Entity = new Entity() { Index = pb.Entity },
-                Collider = pb.BoxCollider
+                Collider = pb.BoxCollider,
+                Scale = 1
             };
 
             if (pb.Motion == PhysicsBody.MotionType.Dynamic)
@@ -208,33 +209,36 @@ public class World : IDisposable
         // the rigidbody state back to the PhysicsBody component.
         PhysicsWorld.CollisionWorld.UpdateBodyIndexMap();
 
-        var joints = PhysicsWorld.Joints;
+        // Joint API was changed in 1.0, some properties are internal. Will
+        // need to modify the code a bit to get them working again.
 
-        for (int i = 0; i < physicsJoints.Count; i++)
-        {
-            var physicsJoint = physicsJoints[i];
+        //var joints = PhysicsWorld.Joints;
 
-            int bodyIndexB = PhysicsWorld.GetRigidBodyIndex(new Entity() { Index = physicsJoint.Body.Entity });
-            int bodyIndexA = PhysicsWorld.GetRigidBodyIndex(new Entity() { Index = physicsJoint.Target.Entity });
+        //for (int i = 0; i < physicsJoints.Count; i++)
+        //{
+        //    var physicsJoint = physicsJoints[i];
 
-            joints[i] = new Joint()
-            {
-                Entity = new Entity() { Index = physicsJoint.Body.Entity },
-                BodyPair = new BodyIndexPair() { BodyIndexA = bodyIndexA, BodyIndexB = bodyIndexB },
-                EnableCollision = 0,
-                AFromJoint = new Unity.Physics.Math.MTransform(quaternion.identity, float3.zero),
-                BFromJoint = new Unity.Physics.Math.MTransform(quaternion.Euler(physicsJoint.AngularAnchor), physicsJoint.Anchor),
-                Version = 0,
-                Constraints = new Unity.Collections.FixedList128Bytes<Constraint>
-                {
-                    Length = 2,
-                    [0] = Constraint.BallAndSocket(),
-                    [1] = Constraint.FixedAngle()
-                }
-            };
-        }
+        //    int bodyIndexB = PhysicsWorld.GetRigidBodyIndex(new Entity() { Index = physicsJoint.Body.Entity });
+        //    int bodyIndexA = PhysicsWorld.GetRigidBodyIndex(new Entity() { Index = physicsJoint.Target.Entity });
 
-        PhysicsWorld.DynamicsWorld.UpdateJointIndexMap();
+        //    joints[i] = new Joint()
+        //    {
+        //        Entity = new Entity() { Index = physicsJoint.Body.Entity },
+        //        BodyPair = new BodyIndexPair() { BodyIndexA = bodyIndexA, BodyIndexB = bodyIndexB },
+        //        EnableCollision = 0,
+        //        AFromJoint = new Unity.Physics.Math.MTransform(quaternion.identity, float3.zero),
+        //        BFromJoint = new Unity.Physics.Math.MTransform(quaternion.Euler(physicsJoint.AngularAnchor), physicsJoint.Anchor),
+        //        Version = 0,
+        //        Constraints = new Unity.Collections.FixedList128Bytes<Constraint>
+        //        {
+        //            Length = 2,
+        //            [0] = Constraint.BallAndSocket(),
+        //            [1] = Constraint.FixedAngle()
+        //        }
+        //    };
+        //}
+
+        //PhysicsWorld.DynamicsWorld.UpdateJointIndexMap();
 
         // Prepare the world for collision detection. If this method is not called no
         // collisions will occur during physics step.
