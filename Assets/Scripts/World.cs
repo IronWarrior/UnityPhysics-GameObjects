@@ -25,6 +25,8 @@ public class World : IDisposable
 
     private int dynamicCount, staticCount;
 
+    private Simulation sim = Simulation.Create();
+
     public World()
     {
         // Initialize the world's capacity to all zeroes, as the capacity
@@ -37,6 +39,7 @@ public class World : IDisposable
         store.Dispose();
         context.Dispose();
         PhysicsWorld.Dispose();
+        sim.Dispose();
     }
 
     public void AddPhysicsJoint(PhysicsJoint joint)
@@ -103,9 +106,16 @@ public class World : IDisposable
             SynchronizeCollisionWorld = true
         };
 
-        context.Reset(input);
+        //context.Reset(input);
 
-        Simulation.StepImmediate(input, ref context);
+        //Simulation.StepImmediate(input, ref context);
+
+        sim.ResetSimulationContext(input);
+
+        SimulationJobHandles handles = sim.ScheduleStepJobs(input, default, true);
+
+        handles.FinalExecutionHandle.Complete();
+        handles.FinalDisposeHandle.Complete();
 
         // Copy the state from the PhysicsWorld back to the PhysicsBody components.
         foreach (var pb in bodies)
