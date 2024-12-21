@@ -3,6 +3,7 @@ using Unity.Mathematics;
 using Unity.Entities;
 using System;
 using System.Collections.Generic;
+using Unity.Collections;
 
 public class World : IDisposable
 {
@@ -147,6 +148,7 @@ public class World : IDisposable
 
     private void BuildPhysicsWorld(float deltaTime, float3 gravity)
     {
+        int previousStaticBodyCount = PhysicsWorld.NumStaticBodies;
         // Reset() resizes array capacities.
         PhysicsWorld.Reset(staticCount, dynamicCount, 0);
 
@@ -252,6 +254,9 @@ public class World : IDisposable
 
         // Prepare the world for collision detection. If this method is not called no
         // collisions will occur during physics step.
-        PhysicsWorld.CollisionWorld.BuildBroadphase(ref PhysicsWorld, deltaTime, gravity);
+        var shouldBuildTree = new NativeReference<int>(staticCount != previousStaticBodyCount ? 1 : 0, Allocator.TempJob);
+        var buildHandle = PhysicsWorld.CollisionWorld.ScheduleBuildBroadphaseJobs(ref PhysicsWorld, deltaTime, gravity, shouldBuildTree, default);
+        buildHandle.Complete();
+        shouldBuildTree.Dispose();
     }
 }
