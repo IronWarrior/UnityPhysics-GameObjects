@@ -14,7 +14,7 @@ public class PhysicsRunner : MonoBehaviour
     int solverIterations = 5;
 
     [SerializeField]
-    Mode currentMode;
+    public Mode currentMode;
 
     [SerializeField]
     bool multithreaded = true;

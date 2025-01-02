@@ -129,17 +129,19 @@ public class World : IDisposable
             SimulationJobHandles handles = sim.ScheduleStepJobs(input, default, true);
 
             handles.FinalExecutionHandle.Complete();
-            handles.FinalDisposeHandle.Complete();
 
             stopwatch.Stop();
+
+            handles.FinalDisposeHandle.Complete();            
         }
         else
         {
             PhysicsWorld.CollisionWorld.BuildBroadphase(ref PhysicsWorld, deltaTime, gravity);
 
+            sim.ResetSimulationContext(input);
+
             stopwatch.Start();
 
-            sim.ResetSimulationContext(input);
             sim.Step(input);
 
             stopwatch.Stop();
