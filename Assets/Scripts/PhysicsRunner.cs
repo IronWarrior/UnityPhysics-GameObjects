@@ -16,6 +16,9 @@ public class PhysicsRunner : MonoBehaviour
     [SerializeField]
     Mode currentMode;
 
+    [SerializeField]
+    bool multithreaded = true;
+
     public enum Mode { UPhysics, PhysX };
 
     public World World { get; private set; }
@@ -55,18 +58,17 @@ public class PhysicsRunner : MonoBehaviour
             OnUpdate?.Invoke(deltaTime);
 
             if (currentMode == Mode.UPhysics)
-                World.Step(deltaTime, gravity, Mathf.Clamp(solverIterations, 1, int.MaxValue));
+                World.Step(deltaTime, gravity, Mathf.Clamp(solverIterations, 1, int.MaxValue), multithreaded);
             else
             {
-                Stopwatch sw = new Stopwatch();
-
-                sw.Start();
+                Stopwatch stopwatch = new();
+                stopwatch.Start();
 
                 Physics.Simulate(deltaTime);
 
-                sw.Stop();
+                stopwatch.Stop();
 
-                UnityEngine.Debug.Log($"SW: {sw.Elapsed.TotalMilliseconds}");
+                UnityEngine.Debug.Log($"PhysX Step: {stopwatch.Elapsed.TotalMilliseconds}ms");
             }
 
             accumulatedDeltaTime -= deltaTime;

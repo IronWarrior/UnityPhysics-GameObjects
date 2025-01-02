@@ -4,12 +4,13 @@ using Unity.Entities;
 using System;
 using System.Collections.Generic;
 using Unity.Collections;
+using System.Diagnostics;
 
 public class World : IDisposable
 {
     public PhysicsWorld PhysicsWorld;
 
-    private SimulationContext context = new SimulationContext();
+    //private SimulationContext context = new SimulationContext();
 
     private readonly BlobAssetStore store = new BlobAssetStore(1000);
 
@@ -38,7 +39,7 @@ public class World : IDisposable
     public void Dispose()
     {
         store.Dispose();
-        context.Dispose();
+        //context.Dispose();
         PhysicsWorld.Dispose();
         sim.Dispose();
     }
@@ -91,8 +92,10 @@ public class World : IDisposable
         entityIdToBodies.Remove(pb.Entity);
     }
 
-    public void Step(float deltaTime, float3 gravity, int solverIterations)
+    public void Step(float deltaTime, float3 gravity, int solverIterations, bool multithreaded)
     {
+        int previousStaticBodyCount = PhysicsWorld.NumStaticBodies;
+
         BuildPhysicsWorld(deltaTime, gravity);
 
         SimulationStepInput input = new()
@@ -107,16 +110,42 @@ public class World : IDisposable
             SynchronizeCollisionWorld = true
         };
 
-        //context.Reset(input);
+        Stopwatch stopwatch = new();
 
-        //Simulation.StepImmediate(input, ref context);
+        // Prepare the world for collision detection. If this method is not called no
+        // collisions will occur during physics step.
+        if (multithreaded)
+        {
+            var shouldBuildTree = new NativeReference<int>(staticCount != previousStaticBodyCount ? 1 : 0, Allocator.TempJob);
+            var buildHandle = PhysicsWorld.CollisionWorld.ScheduleBuildBroadphaseJobs(ref PhysicsWorld, deltaTime, gravity, shouldBuildTree, default);
 
-        sim.ResetSimulationContext(input);
+            buildHandle.Complete();
+            shouldBuildTree.Dispose();
 
-        SimulationJobHandles handles = sim.ScheduleStepJobs(input, default, true);
+            sim.ResetSimulationContext(input);
 
-        handles.FinalExecutionHandle.Complete();
-        handles.FinalDisposeHandle.Complete();
+            stopwatch.Start();
+
+            SimulationJobHandles handles = sim.ScheduleStepJobs(input, default, true);
+
+            handles.FinalExecutionHandle.Complete();
+            handles.FinalDisposeHandle.Complete();
+
+            stopwatch.Stop();
+        }
+        else
+        {
+            PhysicsWorld.CollisionWorld.BuildBroadphase(ref PhysicsWorld, deltaTime, gravity);
+
+            stopwatch.Start();
+
+            sim.ResetSimulationContext(input);
+            sim.Step(input);
+
+            stopwatch.Stop();
+        }
+
+        UnityEngine.Debug.Log($"U Physics Bphase and Step: {stopwatch.Elapsed.TotalMilliseconds}ms");
 
         // Copy the state from the PhysicsWorld back to the PhysicsBody components.
         foreach (var pb in bodies)
@@ -134,7 +163,7 @@ public class World : IDisposable
             }
         }
 
-        var triggers = context.TriggerEvents.GetEnumerator();
+        var triggers = sim.TriggerEvents.GetEnumerator();
 
         while (triggers.MoveNext())
         {
@@ -251,12 +280,5 @@ public class World : IDisposable
         //}
 
         //PhysicsWorld.DynamicsWorld.UpdateJointIndexMap();
-
-        // Prepare the world for collision detection. If this method is not called no
-        // collisions will occur during physics step.
-        var shouldBuildTree = new NativeReference<int>(staticCount != previousStaticBodyCount ? 1 : 0, Allocator.TempJob);
-        var buildHandle = PhysicsWorld.CollisionWorld.ScheduleBuildBroadphaseJobs(ref PhysicsWorld, deltaTime, gravity, shouldBuildTree, default);
-        buildHandle.Complete();
-        shouldBuildTree.Dispose();
     }
 }
