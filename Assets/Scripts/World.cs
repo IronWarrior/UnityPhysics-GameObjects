@@ -145,7 +145,7 @@ public class World : IDisposable
             stopwatch.Stop();
         }
 
-        UnityEngine.Debug.Log($"U Physics Bphase and Step: {stopwatch.Elapsed.TotalMilliseconds}ms");
+        UnityEngine.Debug.Log($"U Physics step: {stopwatch.Elapsed.TotalMilliseconds}ms");
 
         // Copy the state from the PhysicsWorld back to the PhysicsBody components.
         foreach (var pb in bodies)
