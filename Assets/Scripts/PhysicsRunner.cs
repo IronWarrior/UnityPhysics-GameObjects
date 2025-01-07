@@ -31,19 +31,6 @@ public class PhysicsRunner : MonoBehaviour
         World = new World();
     }
 
-    private void Start()
-    {
-        foreach (var pb in FindObjectsOfType<PhysicsBody>())
-        {
-            World.AddPhysicsBody(pb);
-        }
-
-        foreach (var pj in FindObjectsOfType<PhysicsJoint>())
-        {
-            World.AddPhysicsJoint(pj);
-        }
-    }
-
     private void OnDestroy()
     {
         World.Dispose();
@@ -58,7 +45,11 @@ public class PhysicsRunner : MonoBehaviour
             OnUpdate?.Invoke(deltaTime);
 
             if (currentMode == Mode.UPhysics)
-                World.Step(deltaTime, gravity, Mathf.Clamp(solverIterations, 1, int.MaxValue), multithreaded);
+            {
+                var bodies = FindObjectsOfType<PhysicsBody>();
+
+                World.Step(bodies, deltaTime, gravity, Mathf.Clamp(solverIterations, 1, int.MaxValue), multithreaded);
+            }
             else
             {
                 Stopwatch stopwatch = new();

@@ -1,47 +1,43 @@
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Physics;
 using UnityEngine;
 
-public class PhysicsBody : MonoBehaviour
+public class PhysicsBody : MonoBehaviour, IPhysicsBody
 {
-    [SerializeField]
-    Vector3 boxColliderDimensions = Vector3.one;
-
-    public Unity.Physics.CollisionResponsePolicy CollisionResponse;
-
-    public enum MotionType { Dynamic, Static }
-
-    public MotionType Motion;
-    public Vector3 BoxColliderSize => new Vector3(
-        boxColliderDimensions.x * transform.localScale.x,
-        boxColliderDimensions.y * transform.localScale.y,
-        boxColliderDimensions.z * transform.localScale.z);
-
-    public float Mass = 1;
-    public float GravityScale = 1;
+    [SerializeField] CollisionResponsePolicy collisionResponse = CollisionResponsePolicy.Collide;  
+    [SerializeField] bool isKinematic;
+    [SerializeField] float mass = 1;
+    [SerializeField] float gravityScale = 1;
 
     /// <summary>
     /// Linear velocity in world space.
     /// </summary>
-    public Vector3 Velocity;
-    
+    public float3 Velocity { get; set; }
+    public float3 LocalAngularVelocity { get; set; }
+
+    public bool IsKinematic => isKinematic;
+    public float Mass => mass;
+    public float GravityScale => gravityScale;
+
     /// <summary>
     /// Angular velocity in world space.
     /// </summary>
-    public Vector3 AngularVelocity
+    public float3 AngularVelocity
     {
         get => CalculateWorldAngularVelocity(LocalAngularVelocity);
         set => LocalAngularVelocity = CalculateLocalAngularVelocity(value);
     }
 
-    public Vector3 LocalAngularVelocity;
-
-    public int Entity;
-    public BlobAssetReference<Unity.Physics.Collider> BoxCollider;
+    private BlobAssetReference<Unity.Physics.Collider> physicsCollider;
 
     public event System.Action<PhysicsBody> OnTrigger;
 
-    // TODO: Internal.
+    private void Start()
+    {
+        physicsCollider = FindObjectOfType<PhysicsRunner>().World.GetColliderAsset(GetComponent<UnityEngine.Collider>(), collisionResponse);
+    }
+
     public void OnTriggerEvent(PhysicsBody other)
     {
         OnTrigger?.Invoke(other);
@@ -49,7 +45,7 @@ public class PhysicsBody : MonoBehaviour
 
     private float3 CalculateLocalAngularVelocity(Vector3 worldAngularVelocity)
     {
-        quaternion inertiaOrientationInWorldSpace = math.mul(transform.rotation, BoxCollider.Value.MassProperties.MassDistribution.Transform.rot);
+        quaternion inertiaOrientationInWorldSpace = math.mul(transform.rotation, physicsCollider.Value.MassProperties.MassDistribution.Transform.rot);
         float3 angularVelocityInertiaSpace = math.rotate(math.inverse(inertiaOrientationInWorldSpace), worldAngularVelocity);
 
         return angularVelocityInertiaSpace;
@@ -57,16 +53,26 @@ public class PhysicsBody : MonoBehaviour
 
     private float3 CalculateWorldAngularVelocity(Vector3 localAngularVelocity)
     {
-        quaternion inertiaOrientationInWorldSpace = math.mul(transform.rotation, BoxCollider.Value.MassProperties.MassDistribution.Transform.rot);
+        quaternion inertiaOrientationInWorldSpace = math.mul(transform.rotation, physicsCollider.Value.MassProperties.MassDistribution.Transform.rot);
         return math.rotate(inertiaOrientationInWorldSpace, localAngularVelocity);
     }
 
-    private void OnDrawGizmosSelected()
+    public RigidBody GetRigidbody()
     {
-        var matrix = Gizmos.matrix;
-        Gizmos.matrix = Matrix4x4.TRS(transform.position, transform.rotation, Vector3.one);
-        Gizmos.color = new Color(0.55f, 0.95f, 0.55f, 0.75f);
-        Gizmos.DrawWireCube(Vector3.zero, BoxColliderSize);
-        Gizmos.matrix = matrix;
+        var rigidTransform = RigidTransform.identity;
+        rigidTransform.pos = transform.position;
+        rigidTransform.rot = transform.rotation;
+
+        return new()
+        {
+            WorldFromBody = rigidTransform,
+            Collider = physicsCollider,
+            Scale = 1
+        };
+    }
+
+    public void SetRigidbody(RigidBody rb)
+    {
+        transform.SetPositionAndRotation(rb.WorldFromBody.pos, rb.WorldFromBody.rot);
     }
 }

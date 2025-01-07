@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 4366024749461094078}
   - component: {fileID: 2250039229063404916}
   - component: {fileID: 8535952182600065014}
+  - component: {fileID: 8723223856825577071}
   m_Layer: 0
   m_Name: DynamicUPhysics
   m_TagString: Untagged
@@ -96,11 +97,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7c46e7ba443ca2a4381030625bd0a250, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  boxColliderDimensions: {x: 1, y: 1, z: 1}
-  CollisionResponse: 0
-  Motion: 0
-  Mass: 1
-  GravityScale: 1
-  Velocity: {x: 0, y: 0, z: 0}
-  AngularVelocity: {x: 0, y: 0, z: 0}
-  Entity: 0
+  collisionResponse: 0
+  isKinematic: 0
+  mass: 1
+  gravityScale: 1
+--- !u!65 &8723223856825577071
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7737053215682050019}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}

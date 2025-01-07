@@ -220,14 +220,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7c46e7ba443ca2a4381030625bd0a250, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  boxColliderDimensions: {x: 1, y: 1, z: 1}
-  CollisionResponse: 0
-  Motion: 1
-  Mass: 1
-  GravityScale: 1
-  Velocity: {x: 0, y: 0, z: 0}
-  AngularVelocity: {x: 0, y: 0, z: 0}
-  Entity: 0
+  collisionResponse: 0
+  isKinematic: 1
+  mass: 1
+  gravityScale: 1
 --- !u!114 &525972036
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -294,9 +290,9 @@ MonoBehaviour:
   uPhysicsPrefab: {fileID: 7737053215682050019, guid: 1fd4d92ea740e8d43893b4193ea51023, type: 3}
   PhysXPrefab: {fileID: 7737053215682050019, guid: 9c5b342a19f1d854b8aaea1dff4ef4a1, type: 3}
   spacing: 1.5
-  rows: 5
-  columns: 5
-  stacks: 5
+  rows: 10
+  columns: 10
+  stacks: 10
   randomizeRotation: 1
 --- !u!4 &861657338
 Transform:

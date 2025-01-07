@@ -10,22 +10,11 @@ public class World : IDisposable
 {
     public PhysicsWorld PhysicsWorld;
 
-    private readonly BlobAssetStore store = new BlobAssetStore(1000);
-
-    // TODO: Better data structure for faster remove, etc.
-    private readonly List<PhysicsBody> bodies = new List<PhysicsBody>();
-    private readonly List<PhysicsJoint> physicsJoints = new List<PhysicsJoint>();
+    private readonly BlobAssetStore store = new(1000);
 
     // TODO: Dictionary iteration is non-deterministic in .NET...is there any issue with accessing individual elements?
-    private readonly Dictionary<int, PhysicsBody> entityIdToBodies = new Dictionary<int, PhysicsBody>();
-
-    // Start at entity 1, since an entity with index 0/version 0 is considered null.
-    // Maybe better to increment version to 1 initially?
-    private int currentEntityIndex = 1;
-
-    private int dynamicCount, staticCount;
-
-    private Simulation sim = Simulation.Create();
+    private readonly Dictionary<int, PhysicsBody> entityIdToBodies = new();
+    private readonly Simulation sim = Simulation.Create();
 
     public World()
     {
@@ -41,59 +30,9 @@ public class World : IDisposable
         sim.Dispose();
     }
 
-    public void AddPhysicsJoint(PhysicsJoint joint)
+    public void Step(IPhysicsBody[] physicsBodies, float deltaTime, float3 gravity, int solverIterations, bool multithreaded)
     {
-        physicsJoints.Add(joint);
-    }
-
-    public void RemovePhysicsJoint(PhysicsJoint joint)
-    {
-        physicsJoints.Remove(joint);
-    }
-
-    public void AddPhysicsBody(PhysicsBody pb)
-    {
-        if (pb.Motion == PhysicsBody.MotionType.Dynamic)
-            dynamicCount++;
-        else
-            staticCount++;
-
-        BoxGeometry geo = new BoxGeometry()
-        {
-            Size = pb.BoxColliderSize,
-            Orientation = quaternion.identity,
-            Center = float3.zero
-        };
-
-        var mat = Material.Default;
-        mat.CollisionResponse = pb.CollisionResponse;
-        var blob = BoxCollider.Create(geo, CollisionFilter.Default, mat);
-        store.TryAdd(ref blob);
-
-        pb.BoxCollider = blob;
-        pb.Entity = currentEntityIndex;
-        currentEntityIndex++;
-
-        bodies.Add(pb);
-        entityIdToBodies[pb.Entity] = pb;
-    }
-
-    public void RemovePhysicsBody(PhysicsBody pb)
-    {
-        if (pb.Motion == PhysicsBody.MotionType.Dynamic)
-            dynamicCount--;
-        else
-            staticCount--;
-
-        bodies.Remove(pb);
-        entityIdToBodies.Remove(pb.Entity);
-    }
-
-    public void Step(float deltaTime, float3 gravity, int solverIterations, bool multithreaded)
-    {
-        int previousStaticBodyCount = PhysicsWorld.NumStaticBodies;
-
-        BuildPhysicsWorld();
+        BuildPhysicsWorld(physicsBodies, out bool hasStaticCountChanged);
 
         SimulationStepInput input = new()
         {
@@ -113,7 +52,7 @@ public class World : IDisposable
         // collisions will occur during physics step.
         if (multithreaded)
         {
-            var shouldBuildTree = new NativeReference<int>(staticCount != previousStaticBodyCount ? 1 : 0, Allocator.TempJob);
+            var shouldBuildTree = new NativeReference<int>(hasStaticCountChanged ? 1 : 0, Allocator.TempJob);
             var buildHandle = PhysicsWorld.CollisionWorld.ScheduleBuildBroadphaseJobs(ref PhysicsWorld, deltaTime, gravity, shouldBuildTree, default);
 
             buildHandle.Complete();
@@ -135,7 +74,7 @@ public class World : IDisposable
         {
             stopwatch.Start();
 
-            PhysicsWorld.CollisionWorld.BuildBroadphase(ref PhysicsWorld, deltaTime, gravity);
+            PhysicsWorld.CollisionWorld.BuildBroadphase(ref PhysicsWorld, deltaTime, gravity, hasStaticCountChanged);
 
             sim.ResetSimulationContext(input);
 
@@ -147,15 +86,16 @@ public class World : IDisposable
         UnityEngine.Debug.Log($"U Physics step: {stopwatch.Elapsed.TotalMilliseconds}ms");
 
         // Copy the state from the PhysicsWorld back to the PhysicsBody components.
-        foreach (var pb in bodies)
+        for (int i = 0; i < physicsBodies.Length; i++)
         {
-            int rbIndex = PhysicsWorld.GetRigidBodyIndex(new Entity() { Index = pb.Entity });
+            var pb = physicsBodies[i];
+
+            int rbIndex = PhysicsWorld.GetRigidBodyIndex(new Entity() { Index = i + 1 });
             var rb = PhysicsWorld.Bodies[rbIndex];
 
-            pb.transform.position = rb.WorldFromBody.pos;
-            pb.transform.rotation = rb.WorldFromBody.rot;
+            pb.SetRigidbody(rb);
 
-            if (pb.Motion == PhysicsBody.MotionType.Dynamic)
+            if (pb.IsKinematic == false)
             {
                 pb.Velocity = PhysicsWorld.MotionVelocities[rbIndex].LinearVelocity;
                 pb.LocalAngularVelocity = PhysicsWorld.MotionVelocities[rbIndex].AngularVelocity;
@@ -174,8 +114,20 @@ public class World : IDisposable
         }
     }
 
-    private void BuildPhysicsWorld()
+    private void BuildPhysicsWorld(IPhysicsBody[] physicsBodies, out bool hasStaticCountChanged)
     {
+        int staticCount = 0, dynamicCount = 0;
+
+        foreach (var body in physicsBodies)
+        {
+            if (body.IsKinematic == true)
+                staticCount++;
+            else
+                dynamicCount++;
+        }
+
+        hasStaticCountChanged = staticCount != PhysicsWorld.NumStaticBodies;
+
         // Reset() resizes array capacities.
         PhysicsWorld.Reset(staticCount, dynamicCount, 0);
 
@@ -189,27 +141,21 @@ public class World : IDisposable
         var motionDatas = PhysicsWorld.MotionDatas;
         var motionVelocities = PhysicsWorld.MotionVelocities;
 
-        foreach (var pb in bodies)
+        for ( var i = 0; i < physicsBodies.Length; i++ )
         {
-            var transform = RigidTransform.identity;
-            transform.pos = pb.transform.position;
-            transform.rot = pb.transform.rotation;
+            var pb = physicsBodies[i];
 
-            RigidBody rb = new()
-            {
-                WorldFromBody = transform,
-                Entity = new Entity() { Index = pb.Entity },
-                Collider = pb.BoxCollider,
-                Scale = 1
-            };
+            RigidBody rb = pb.GetRigidbody();
 
-            if (pb.Motion == PhysicsBody.MotionType.Dynamic)
+            rb.Entity = new() { Index = i + 1 };
+
+            if (pb.IsKinematic == false)
             {
                 dynamics[dynamicIndex] = rb;
 
                 float inverseMass = math.rcp(pb.Mass);
-                float3 inverseInteriaTensor = math.rcp(pb.BoxCollider.Value.MassProperties.MassDistribution.InertiaTensor * pb.Mass);
-                float angularExpansionFactor = pb.BoxCollider.Value.MassProperties.AngularExpansionFactor;
+                float3 inverseInteriaTensor = math.rcp(rb.Collider.Value.MassProperties.MassDistribution.InertiaTensor * pb.Mass);
+                float angularExpansionFactor = rb.Collider.Value.MassProperties.AngularExpansionFactor;
 
                 motionVelocities[dynamicIndex] = new MotionVelocity()
                 {
@@ -221,14 +167,14 @@ public class World : IDisposable
                     AngularExpansionFactor = angularExpansionFactor
                 };
 
-                quaternion interiaOrientation = pb.BoxCollider.Value.MassProperties.MassDistribution.Transform.rot;
-                float3 centerOfMass = pb.BoxCollider.Value.MassProperties.MassDistribution.Transform.pos;
+                quaternion interiaOrientation = rb.Collider.Value.MassProperties.MassDistribution.Transform.rot;
+                float3 centerOfMass = rb.Collider.Value.MassProperties.MassDistribution.Transform.pos;
 
                 motionDatas[dynamicIndex] = new MotionData()
                 {
                     WorldFromMotion = new RigidTransform(
-                        math.mul(pb.transform.rotation, interiaOrientation),
-                        math.rotate(pb.transform.rotation, centerOfMass) + (float3)pb.transform.position),
+                        math.mul(rb.WorldFromBody.rot, interiaOrientation),
+                        math.rotate(rb.WorldFromBody.rot, centerOfMass) + rb.WorldFromBody.pos),
                     BodyFromMotion = new RigidTransform(interiaOrientation, centerOfMass),
                     LinearDamping = 0,
                     AngularDamping = 0                    
@@ -278,5 +224,43 @@ public class World : IDisposable
         //}
 
         //PhysicsWorld.DynamicsWorld.UpdateJointIndexMap();
+    }
+
+    public BlobAssetReference<Collider> GetColliderAsset(UnityEngine.Collider collider, CollisionResponsePolicy collisionResponse)
+    {
+        var mat = Material.Default;
+        mat.CollisionResponse = collisionResponse;
+
+        BlobAssetReference<Collider> asset;
+
+        if (collider is UnityEngine.BoxCollider bc)
+        {
+            BoxGeometry geo = new()
+            {
+                Size = new float3(bc.size) * new float3(bc.transform.localScale),
+                Orientation = quaternion.identity,
+                Center = float3.zero
+            };
+
+            asset = BoxCollider.Create(geo, CollisionFilter.Default, mat);
+        }
+        else if (collider is UnityEngine.SphereCollider c)
+        {
+            SphereGeometry geo = new()
+            {
+                Radius = c.radius,
+                Center = float3.zero
+            };
+
+            asset = SphereCollider.Create(geo, CollisionFilter.Default, mat);
+        }
+        else
+        {
+            throw new Exception($"Collider of type {collider.GetType()} not supported.");
+        }
+
+        store.TryAdd(ref asset);
+
+        return asset;
     }
 }
