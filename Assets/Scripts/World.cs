@@ -10,8 +10,6 @@ public class World : IDisposable
 {
     public PhysicsWorld PhysicsWorld;
 
-    //private SimulationContext context = new SimulationContext();
-
     private readonly BlobAssetStore store = new BlobAssetStore(1000);
 
     // TODO: Better data structure for faster remove, etc.
@@ -39,7 +37,6 @@ public class World : IDisposable
     public void Dispose()
     {
         store.Dispose();
-        //context.Dispose();
         PhysicsWorld.Dispose();
         sim.Dispose();
     }
@@ -96,7 +93,7 @@ public class World : IDisposable
     {
         int previousStaticBodyCount = PhysicsWorld.NumStaticBodies;
 
-        BuildPhysicsWorld(deltaTime, gravity);
+        BuildPhysicsWorld();
 
         SimulationStepInput input = new()
         {
@@ -136,11 +133,11 @@ public class World : IDisposable
         }
         else
         {
+            stopwatch.Start();
+
             PhysicsWorld.CollisionWorld.BuildBroadphase(ref PhysicsWorld, deltaTime, gravity);
 
             sim.ResetSimulationContext(input);
-
-            stopwatch.Start();
 
             sim.Step(input);
 
@@ -177,9 +174,8 @@ public class World : IDisposable
         }
     }
 
-    private void BuildPhysicsWorld(float deltaTime, float3 gravity)
+    private void BuildPhysicsWorld()
     {
-        int previousStaticBodyCount = PhysicsWorld.NumStaticBodies;
         // Reset() resizes array capacities.
         PhysicsWorld.Reset(staticCount, dynamicCount, 0);
 
@@ -199,7 +195,7 @@ public class World : IDisposable
             transform.pos = pb.transform.position;
             transform.rot = pb.transform.rotation;
 
-            RigidBody rb = new RigidBody()
+            RigidBody rb = new()
             {
                 WorldFromBody = transform,
                 Entity = new Entity() { Index = pb.Entity },

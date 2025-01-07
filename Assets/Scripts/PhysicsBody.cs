@@ -28,13 +28,13 @@ public class PhysicsBody : MonoBehaviour
     /// <summary>
     /// Angular velocity in world space.
     /// </summary>
-    public Vector3 AngularVelocity;
-
-    public Vector3 LocalAngularVelocity
+    public Vector3 AngularVelocity
     {
-        get => CalculateLocalAngularVelocity(AngularVelocity);
-        set => AngularVelocity = CalculateWorldAngularVelocity(value);
+        get => CalculateWorldAngularVelocity(LocalAngularVelocity);
+        set => LocalAngularVelocity = CalculateLocalAngularVelocity(value);
     }
+
+    public Vector3 LocalAngularVelocity;
 
     public int Entity;
     public BlobAssetReference<Unity.Physics.Collider> BoxCollider;
