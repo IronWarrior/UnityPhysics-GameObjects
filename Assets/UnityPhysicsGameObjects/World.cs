@@ -30,7 +30,7 @@ public class World : IDisposable
         sim.Dispose();
     }
 
-    public void Step(IPhysicsBody[] physicsBodies, float deltaTime, float3 gravity, int solverIterations, bool multithreaded)
+    public void Step(IPhysicsBody[] physicsBodies, float deltaTime, float3 gravity, int solverIterations)
     {
         BuildPhysicsWorld(physicsBodies, out bool hasStaticCountChanged);
 
@@ -47,41 +47,22 @@ public class World : IDisposable
         };
 
         Stopwatch stopwatch = new();
+        stopwatch.Start();
 
-        // Prepare the world for collision detection. If this method is not called no
-        // collisions will occur during physics step.
-        if (multithreaded)
-        {
-            var shouldBuildTree = new NativeReference<int>(hasStaticCountChanged ? 1 : 0, Allocator.TempJob);
-            var buildHandle = PhysicsWorld.CollisionWorld.ScheduleBuildBroadphaseJobs(ref PhysicsWorld, deltaTime, gravity, shouldBuildTree, default);
+        var shouldBuildTree = new NativeReference<int>(hasStaticCountChanged ? 1 : 0, Allocator.TempJob);
+        var buildHandle = PhysicsWorld.CollisionWorld.ScheduleBuildBroadphaseJobs(ref PhysicsWorld, deltaTime, gravity, shouldBuildTree, default);
 
-            buildHandle.Complete();
-            shouldBuildTree.Dispose();
+        buildHandle.Complete();
+        shouldBuildTree.Dispose();
 
-            sim.ResetSimulationContext(input);
+        sim.ResetSimulationContext(input);
 
-            stopwatch.Start();
+        SimulationJobHandles handles = sim.ScheduleStepJobs(input, default, true);
 
-            SimulationJobHandles handles = sim.ScheduleStepJobs(input, default, true);
+        handles.FinalExecutionHandle.Complete();
+        handles.FinalDisposeHandle.Complete();
 
-            handles.FinalExecutionHandle.Complete();
-
-            stopwatch.Stop();
-
-            handles.FinalDisposeHandle.Complete();            
-        }
-        else
-        {
-            stopwatch.Start();
-
-            PhysicsWorld.CollisionWorld.BuildBroadphase(ref PhysicsWorld, deltaTime, gravity, hasStaticCountChanged);
-
-            sim.ResetSimulationContext(input);
-
-            sim.Step(input);
-
-            stopwatch.Stop();
-        }
+        stopwatch.Stop();
 
         UnityEngine.Debug.Log($"U Physics step: {stopwatch.Elapsed.TotalMilliseconds}ms");
 
@@ -141,7 +122,7 @@ public class World : IDisposable
         var motionDatas = PhysicsWorld.MotionDatas;
         var motionVelocities = PhysicsWorld.MotionVelocities;
 
-        for ( var i = 0; i < physicsBodies.Length; i++ )
+        for (var i = 0; i < physicsBodies.Length; i++)
         {
             var pb = physicsBodies[i];
 
@@ -177,7 +158,7 @@ public class World : IDisposable
                         math.rotate(rb.WorldFromBody.rot, centerOfMass) + rb.WorldFromBody.pos),
                     BodyFromMotion = new RigidTransform(interiaOrientation, centerOfMass),
                     LinearDamping = 0,
-                    AngularDamping = 0                    
+                    AngularDamping = 0
                 };
 
                 dynamicIndex++;
@@ -244,11 +225,13 @@ public class World : IDisposable
 
             asset = BoxCollider.Create(geo, CollisionFilter.Default, mat);
         }
-        else if (collider is UnityEngine.SphereCollider c)
+        else if (collider is UnityEngine.SphereCollider sc)
         {
+            float scale = math.max(math.max(collider.transform.localScale.x, collider.transform.localScale.y), collider.transform.localScale.z);
+
             SphereGeometry geo = new()
             {
-                Radius = c.radius,
+                Radius = sc.radius * scale,
                 Center = float3.zero
             };
 

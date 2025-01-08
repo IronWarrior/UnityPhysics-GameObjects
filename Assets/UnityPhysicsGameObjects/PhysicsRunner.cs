@@ -8,7 +8,7 @@ public class PhysicsRunner : MonoBehaviour
     float deltaTime = 0.01f;
 
     [SerializeField]
-    float3 gravity = new float3(0, -9.8f, 0);
+    float3 gravity = new(0, -9.8f, 0);
 
     [SerializeField]
     int solverIterations = 5;
@@ -48,7 +48,7 @@ public class PhysicsRunner : MonoBehaviour
             {
                 var bodies = FindObjectsOfType<PhysicsBody>();
 
-                World.Step(bodies, deltaTime, gravity, Mathf.Clamp(solverIterations, 1, int.MaxValue), multithreaded);
+                World.Step(bodies, deltaTime, gravity, Mathf.Clamp(solverIterations, 1, int.MaxValue));
             }
             else
             {

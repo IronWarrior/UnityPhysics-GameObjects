@@ -4,5 +4,8 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/Demo/Profiling/RigidbodyStack.unity
+    guid: dcadc68abac830e469d8707f8db0d093
   m_configObjects: {}
