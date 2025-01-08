@@ -17,9 +17,6 @@ public class PhysicsRunner : MonoBehaviour
     [SerializeField]
     public Mode currentMode;
 
-    [SerializeField]
-    bool multithreaded = true;
-
     public enum Mode { UPhysics, PhysX };
 
     public World World { get; private set; }

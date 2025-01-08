@@ -1,4 +1,3 @@
-using Unity.Physics;
 using Unity.Mathematics;
 using Unity.Entities;
 using System;
@@ -17,6 +16,8 @@ namespace Unity.Physics.GameObjects
         // TODO: Dictionary iteration is non-deterministic in .NET...is there any issue with accessing individual elements?
         private readonly Dictionary<int, PhysicsBody> entityIdToBodies = new();
         private readonly Simulation sim = Simulation.Create();
+
+        private static readonly Stopwatch stopwatch = new();
 
         public World()
         {
@@ -48,8 +49,7 @@ namespace Unity.Physics.GameObjects
                 SynchronizeCollisionWorld = true
             };
 
-            Stopwatch stopwatch = new();
-            stopwatch.Start();
+            stopwatch.Restart();
 
             var shouldBuildTree = new NativeReference<int>(hasStaticCountChanged ? 1 : 0, Allocator.TempJob);
             var buildHandle = PhysicsWorld.CollisionWorld.ScheduleBuildBroadphaseJobs(ref PhysicsWorld, deltaTime, gravity, shouldBuildTree, default);
