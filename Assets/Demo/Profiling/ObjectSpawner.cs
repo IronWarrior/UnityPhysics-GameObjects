@@ -1,4 +1,5 @@
 using UnityEngine;
+using Unity.Physics.GameObjects;
 
 public class ObjectSpawner : MonoBehaviour
 {

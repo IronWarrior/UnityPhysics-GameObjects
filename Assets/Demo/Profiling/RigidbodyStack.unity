@@ -290,9 +290,9 @@ MonoBehaviour:
   uPhysicsPrefab: {fileID: 7737053215682050019, guid: 1fd4d92ea740e8d43893b4193ea51023, type: 3}
   PhysXPrefab: {fileID: 7737053215682050019, guid: 9c5b342a19f1d854b8aaea1dff4ef4a1, type: 3}
   spacing: 1.5
-  rows: 15
-  columns: 15
-  stacks: 15
+  rows: 5
+  columns: 5
+  stacks: 5
   randomizeRotation: 1
 --- !u!4 &861657338
 Transform:

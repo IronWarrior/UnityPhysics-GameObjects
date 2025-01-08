@@ -2,6 +2,7 @@ using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 using Unity.Physics;
+using Unity.Physics.GameObjects;
 
 public class DemoOverlap : MonoBehaviour
 {

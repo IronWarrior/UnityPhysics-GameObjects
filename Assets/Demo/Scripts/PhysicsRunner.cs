@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Unity.Mathematics;
 using UnityEngine;
+using Unity.Physics.GameObjects;
 
 public class PhysicsRunner : MonoBehaviour
 {
@@ -55,7 +56,7 @@ public class PhysicsRunner : MonoBehaviour
                 Stopwatch stopwatch = new();
                 stopwatch.Start();
 
-                Physics.Simulate(deltaTime);
+                UnityEngine.Physics.Simulate(deltaTime);
 
                 stopwatch.Stop();
 

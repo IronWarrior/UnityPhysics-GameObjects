@@ -1,11 +1,12 @@
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Physics;
+using Unity.Physics.GameObjects;
 using UnityEngine;
 
 public class PhysicsBody : MonoBehaviour, IPhysicsBody
 {
-    [SerializeField] CollisionResponsePolicy collisionResponse = CollisionResponsePolicy.Collide;  
+    [SerializeField] CollisionResponsePolicy collisionResponse = CollisionResponsePolicy.Collide;
     [SerializeField] bool isKinematic;
     [SerializeField] float mass = 1;
     [SerializeField] float gravityScale = 1;
@@ -25,8 +26,8 @@ public class PhysicsBody : MonoBehaviour, IPhysicsBody
     /// </summary>
     public float3 AngularVelocity
     {
-        get => CalculateWorldAngularVelocity(LocalAngularVelocity);
-        set => LocalAngularVelocity = CalculateLocalAngularVelocity(value);
+        get => IPhysicsBody.CalculateWorldAngularVelocity(LocalAngularVelocity, transform.rotation, physicsCollider);
+        set => LocalAngularVelocity = IPhysicsBody.CalculateLocalAngularVelocity(value, transform.rotation, physicsCollider);
     }
 
     private BlobAssetReference<Unity.Physics.Collider> physicsCollider;
@@ -41,20 +42,6 @@ public class PhysicsBody : MonoBehaviour, IPhysicsBody
     public void OnTriggerEvent(PhysicsBody other)
     {
         OnTrigger?.Invoke(other);
-    }
-
-    private float3 CalculateLocalAngularVelocity(Vector3 worldAngularVelocity)
-    {
-        quaternion inertiaOrientationInWorldSpace = math.mul(transform.rotation, physicsCollider.Value.MassProperties.MassDistribution.Transform.rot);
-        float3 angularVelocityInertiaSpace = math.rotate(math.inverse(inertiaOrientationInWorldSpace), worldAngularVelocity);
-
-        return angularVelocityInertiaSpace;
-    }
-
-    private float3 CalculateWorldAngularVelocity(Vector3 localAngularVelocity)
-    {
-        quaternion inertiaOrientationInWorldSpace = math.mul(transform.rotation, physicsCollider.Value.MassProperties.MassDistribution.Transform.rot);
-        return math.rotate(inertiaOrientationInWorldSpace, localAngularVelocity);
     }
 
     public RigidBody GetRigidbody()
